@@ -107,3 +107,4 @@ SIH Hackathon Team - Blockchain & Cybersecurity Domain
 
 ---
 *Building secure, transparent, and fraud-proof election systems for democratic integrity.*
+# vote_auth
