@@ -1,0 +1,12 @@
+# Core Flask Backend - Essential only
+Flask==3.0.0
+Flask-CORS==4.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-JWT-Extended==4.6.0
+Werkzeug==3.0.1
+SQLAlchemy==2.0.25
+
+# Basic utilities
+requests==2.31.0
+python-dateutil==2.8.2
+python-dotenv==1.0.0
