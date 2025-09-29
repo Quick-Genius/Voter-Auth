@@ -1,0 +1,343 @@
+{
+  "polling_booths": [
+    {
+      "id": 1,
+      "booth_number": "001",
+      "location": "Community Center, Sector 1",
+      "capacity": 1000,
+      "coordinates": {
+        "latitude": 28.6139,
+        "longitude": 77.2090
+      }
+    },
+    {
+      "id": 2,
+      "booth_number": "002", 
+      "location": "Government School, Sector 2",
+      "capacity": 800,
+      "coordinates": {
+        "latitude": 28.6219,
+        "longitude": 77.2190
+      }
+    },
+    {
+      "id": 3,
+      "booth_number": "003",
+      "location": "Municipal Hall, Sector 3", 
+      "capacity": 1200,
+      "coordinates": {
+        "latitude": 28.6339,
+        "longitude": 77.2290
+      }
+    }
+  ],
+  "sample_voters": [
+    {
+      "voter_id": "VID001",
+      "name": "Rajesh Kumar",
+      "age": 35,
+      "gender": "Male",
+      "address": "House No. 123, Sector 1, New Delhi - 110001",
+      "phone": "+91-9876543201",
+      "polling_booth_id": 1,
+      "registration_date": "2023-01-15",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": []
+    },
+    {
+      "voter_id": "VID002", 
+      "name": "Priya Sharma",
+      "age": 28,
+      "gender": "Female",
+      "address": "Flat 45B, Sector 1, New Delhi - 110001",
+      "phone": "+91-9876543202",
+      "polling_booth_id": 1,
+      "registration_date": "2023-02-20",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": []
+    },
+    {
+      "voter_id": "VID003",
+      "name": "Amit Singh", 
+      "age": 42,
+      "gender": "Male",
+      "address": "Plot 67, Sector 1, New Delhi - 110001",
+      "phone": "+91-9876543203",
+      "polling_booth_id": 1,
+      "registration_date": "2022-11-10",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": [
+        {
+          "election_date": "2023-05-15",
+          "election_type": "State Assembly",
+          "booth_id": 1,
+          "verified": true
+        }
+      ]
+    },
+    {
+      "voter_id": "VID004",
+      "name": "Sunita Devi",
+      "age": 38,
+      "gender": "Female", 
+      "address": "House No. 234, Sector 2, New Delhi - 110002",
+      "phone": "+91-9876543204",
+      "polling_booth_id": 2,
+      "registration_date": "2023-03-05",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": []
+    },
+    {
+      "voter_id": "VID005",
+      "name": "Vikram Gupta",
+      "age": 31,
+      "gender": "Male",
+      "address": "Apartment 12C, Sector 2, New Delhi - 110002", 
+      "phone": "+91-9876543205",
+      "polling_booth_id": 2,
+      "registration_date": "2023-01-28",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": []
+    },
+    {
+      "voter_id": "VID006",
+      "name": "Meera Patel",
+      "age": 45,
+      "gender": "Female",
+      "address": "Villa 89, Sector 2, New Delhi - 110002",
+      "phone": "+91-9876543206", 
+      "polling_booth_id": 2,
+      "registration_date": "2022-12-18",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": [
+        {
+          "election_date": "2023-05-15",
+          "election_type": "State Assembly",
+          "booth_id": 2,
+          "verified": true
+        }
+      ]
+    },
+    {
+      "voter_id": "VID007",
+      "name": "Ravi Verma",
+      "age": 29,
+      "gender": "Male",
+      "address": "House No. 345, Sector 3, New Delhi - 110003",
+      "phone": "+91-9876543207",
+      "polling_booth_id": 3,
+      "registration_date": "2023-04-12",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": []
+    },
+    {
+      "voter_id": "VID008",
+      "name": "Kavita Joshi",
+      "age": 33,
+      "gender": "Female",
+      "address": "Flat 78D, Sector 3, New Delhi - 110003",
+      "phone": "+91-9876543208",
+      "polling_booth_id": 3,
+      "registration_date": "2023-02-08",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": []
+    },
+    {
+      "voter_id": "VID009",
+      "name": "Deepak Yadav",
+      "age": 40,
+      "gender": "Male",
+      "address": "Plot 91, Sector 3, New Delhi - 110003",
+      "phone": "+91-9876543209",
+      "polling_booth_id": 3,
+      "registration_date": "2022-10-25",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": [
+        {
+          "election_date": "2023-05-15",
+          "election_type": "State Assembly", 
+          "booth_id": 3,
+          "verified": true
+        }
+      ]
+    },
+    {
+      "voter_id": "VID010",
+      "name": "Anita Sharma",
+      "age": 26,
+      "gender": "Female",
+      "address": "House No. 156, Sector 1, New Delhi - 110001",
+      "phone": "+91-9876543210",
+      "polling_booth_id": 1,
+      "registration_date": "2023-05-01",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": []
+    },
+    {
+      "voter_id": "VID011",
+      "name": "Rohit Malhotra",
+      "age": 37,
+      "gender": "Male",
+      "address": "Apartment 23A, Sector 2, New Delhi - 110002",
+      "phone": "+91-9876543211",
+      "polling_booth_id": 2,
+      "registration_date": "2023-03-18",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": []
+    },
+    {
+      "voter_id": "VID012",
+      "name": "Neha Agarwal",
+      "age": 32,
+      "gender": "Female",
+      "address": "Villa 102, Sector 3, New Delhi - 110003",
+      "phone": "+91-9876543212",
+      "polling_booth_id": 3,
+      "registration_date": "2023-01-22",
+      "biometric_data": {
+        "face_encoding_available": true,
+        "iris_template_available": true,
+        "fingerprint_available": false
+      },
+      "voting_history": []
+    }
+  ],
+  "election_info": {
+    "election_name": "General Assembly Elections 2024",
+    "election_date": "2024-03-15",
+    "election_type": "State Assembly",
+    "constituency": "New Delhi Central",
+    "total_registered_voters": 12,
+    "voting_hours": {
+      "start": "07:00",
+      "end": "18:00"
+    },
+    "candidates": [
+      {
+        "name": "Candidate A",
+        "party": "Party 1",
+        "symbol": "Lotus"
+      },
+      {
+        "name": "Candidate B", 
+        "party": "Party 2",
+        "symbol": "Hand"
+      },
+      {
+        "name": "Candidate C",
+        "party": "Independent",
+        "symbol": "Bicycle"
+      }
+    ]
+  },
+  "demo_scenarios": [
+    {
+      "scenario_name": "Normal Voting Process",
+      "description": "Complete voter verification and voting process",
+      "steps": [
+        "Select polling booth",
+        "Enter voter ID (VID001-VID012)",
+        "Complete face verification",
+        "Complete iris verification", 
+        "Vote successfully recorded"
+      ],
+      "expected_outcome": "Successful vote casting"
+    },
+    {
+      "scenario_name": "Duplicate Vote Prevention",
+      "description": "Attempt to vote twice with same voter ID",
+      "steps": [
+        "Complete normal voting process",
+        "Try to vote again with same voter ID",
+        "System detects duplicate attempt",
+        "Fraud alert generated"
+      ],
+      "expected_outcome": "Fraud prevention and logging"
+    },
+    {
+      "scenario_name": "Wrong Booth Voting",
+      "description": "Attempt to vote at incorrect polling booth",
+      "steps": [
+        "Select wrong polling booth",
+        "Enter voter ID assigned to different booth",
+        "System detects booth mismatch",
+        "Voting attempt rejected"
+      ],
+      "expected_outcome": "Booth verification failure"
+    },
+    {
+      "scenario_name": "Biometric Verification Failure",
+      "description": "Simulate biometric verification failure",
+      "steps": [
+        "Enter valid voter ID",
+        "Provide poor quality biometric data",
+        "System fails verification",
+        "Voting process halted"
+      ],
+      "expected_outcome": "Verification failure handling"
+    }
+  ],
+  "system_configuration": {
+    "verification_thresholds": {
+      "face_recognition_confidence": 0.8,
+      "iris_recognition_confidence": 0.85,
+      "ocr_confidence": 0.7
+    },
+    "security_settings": {
+      "max_verification_attempts": 3,
+      "session_timeout_minutes": 15,
+      "fraud_detection_enabled": true,
+      "blockchain_recording_enabled": true
+    },
+    "demo_mode": {
+      "enabled": true,
+      "simulate_biometric_capture": true,
+      "auto_generate_test_data": true,
+      "skip_actual_ml_processing": false
+    }
+  }
+}
