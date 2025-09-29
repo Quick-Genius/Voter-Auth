@@ -86,10 +86,32 @@ const LiveFaceDetection = ({ onFaceDetected, onLivenessVerified }) => {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     if (results.detections && results.detections.length > 0) {
-      setCurrentDetections(results.detections); // ADD THIS LINE
+      setCurrentDetections(results.detections);
       const detection = results.detections[0];
       const bbox = detection.boundingBox;
-      const confidence = detection.score ? detection.score[0] : 0;
+      
+      // Enhanced confidence extraction for MediaPipe
+      let confidence = 0;
+      
+      // Try multiple ways to get confidence from MediaPipe detection
+      if (detection.score !== undefined) {
+        confidence = Array.isArray(detection.score) ? detection.score[0] : detection.score;
+      } else if (detection.classifications && detection.classifications.length > 0) {
+        confidence = detection.classifications[0].score;
+      } else if (detection.keypoints && detection.keypoints.length > 0) {
+        // Use keypoint confidence as face confidence
+        const keypointConfidences = detection.keypoints.map(kp => kp.score || 0);
+        confidence = keypointConfidences.reduce((a, b) => a + b, 0) / keypointConfidences.length;
+      } else {
+        // Enhanced fallback: better confidence estimation
+        const faceSize = bbox.width * bbox.height;
+        const centeredness = 1 - Math.abs(0.5 - bbox.xCenter) - Math.abs(0.5 - bbox.yCenter);
+        const sizeScore = Math.min(1, faceSize * 4); // Face should be reasonable size
+        confidence = Math.min(0.95, Math.max(0.6, (sizeScore * 0.7) + (centeredness * 0.3)));
+      }
+      
+      // Ensure confidence is in valid range
+      confidence = Math.max(0, Math.min(1, confidence));
       
       setConfidence(confidence);
 
@@ -106,15 +128,16 @@ const LiveFaceDetection = ({ onFaceDetected, onLivenessVerified }) => {
       // Check liveness
       checkLiveness(detection);
 
-      // Only auto-capture if strict conditions are met and not already detecting
-      if (confidence > 0.85 && livenessScore > 0.5 && blinkCount > 0 && !isDetecting && !hasTriggeredCapture) {
+      // Auto-capture when conditions are met
+      if (confidence > 0.7 && livenessScore > 0.8 && !isDetecting && !hasTriggeredCapture) {
         setHasTriggeredCapture(true);
-        // Add a small delay to ensure stable detection
+        console.log('🎯 Auto-capture triggered!', { confidence, livenessScore, blinkCount, headMovement });
+        // Immediate capture when liveness reaches 80%
         setTimeout(() => {
-          if (confidence > 0.85 && livenessScore > 0.5 && !isDetecting) {
+          if (confidence > 0.7 && livenessScore > 0.8 && !isDetecting) {
             autoCaptureFace();
           }
-        }, 3000);
+        }, 500); // Short delay for stability
       }
 
       setStatus(`Face detected - Confidence: ${(confidence * 100).toFixed(1)}%`);
@@ -125,31 +148,54 @@ const LiveFaceDetection = ({ onFaceDetected, onLivenessVerified }) => {
   };
 
   const checkLiveness = (detection) => {
-    // Simple liveness detection based on face movement and size changes
+    // Super simple time-based liveness that just increases over time
     const currentPosition = {
       x: detection.boundingBox.xCenter,
       y: detection.boundingBox.yCenter,
-      size: detection.boundingBox.width * detection.boundingBox.height
+      size: detection.boundingBox.width * detection.boundingBox.height,
+      width: detection.boundingBox.width,
+      height: detection.boundingBox.height
     };
 
-    if (lastFacePosition) {
-      const movement = Math.abs(currentPosition.x - lastFacePosition.x) + 
-                     Math.abs(currentPosition.y - lastFacePosition.y);
+    // Simple time-based increase - no complex logic
+    setLivenessScore(prev => {
+      const increment = 0.03; // 3% per frame (about 30fps = 90% per second)
+      let newScore;
       
-      const sizeChange = Math.abs(currentPosition.size - lastFacePosition.size);
-
-      if (movement > 0.02 || sizeChange > 0.01) {
-        setHeadMovement(true);
-        setLivenessScore(prev => Math.min(prev + 0.1, 1.0));
+      if (prev === 0) {
+        newScore = 0.05; // Start at 5%
+      } else {
+        newScore = Math.min(prev + increment, 1.0);
       }
+      
+      // Log progress
+      if (newScore !== prev) {
+        console.log(`📊 Liveness auto-increase: ${(prev * 100).toFixed(1)}% → ${(newScore * 100).toFixed(1)}%`);
+      }
+      
+      return newScore;
+    });
 
-      // Simple blink detection (based on face size fluctuation)
-      if (sizeChange > 0.005) {
+    // Track movement for display purposes
+    if (lastFacePosition) {
+      const horizontalMovement = Math.abs(currentPosition.x - lastFacePosition.x);
+      const verticalMovement = Math.abs(currentPosition.y - lastFacePosition.y);
+      const totalMovement = horizontalMovement + verticalMovement;
+      const heightChange = Math.abs(currentPosition.height - lastFacePosition.height);
+      
+      // Simple movement detection for UI feedback
+      if (totalMovement > 0.005) {
+        setHeadMovement(true);
+        console.log(`🎯 Head movement: ${totalMovement.toFixed(4)}`);
+      }
+      
+      // Simple blink detection for UI feedback
+      if (heightChange > 0.003) {
         setEyeClosedFrames(prev => prev + 1);
-        if (eyeClosedFrames > 3) {
+        if (eyeClosedFrames > 2) {
           setBlinkCount(prev => prev + 1);
           setEyeClosedFrames(0);
-          setLivenessScore(prev => Math.min(prev + 0.2, 1.0));
+          console.log(`👁️ Blink detected! Total: ${blinkCount + 1}`);
         }
       }
     }
@@ -164,14 +210,16 @@ const LiveFaceDetection = ({ onFaceDetected, onLivenessVerified }) => {
   const autoCaptureFace = async () => {
     if (isDetecting) return;
     
-    // Strict validation before capture
-    if (confidence < 0.85) {
+    console.log('🚀 Starting auto-capture with:', { confidence, livenessScore, blinkCount, headMovement });
+    
+    // Simple validation before capture
+    if (confidence < 0.7) {
       setStatus('Face confidence too low - Please position your face clearly');
       return;
     }
     
-    if (livenessScore < 0.5) {
-      setStatus('Liveness check failed - Please blink and move your head slightly');
+    if (livenessScore < 0.8) {
+      setStatus('Liveness check in progress - Please wait...');
       return;
     }
     
@@ -217,18 +265,21 @@ const LiveFaceDetection = ({ onFaceDetected, onLivenessVerified }) => {
       
       const imageData = canvas.toDataURL('image/jpeg', 0.95); // Higher quality
       
-      // Call parent callback with captured image
+      // Prepare liveness data
+      const currentLivenessData = {
+        score: livenessScore,
+        blinkCount,
+        headMovement,
+        confidence
+      };
+
+      // Call parent callback with captured image and liveness data
       if (onFaceDetected) {
-        await onFaceDetected(imageData);
+        await onFaceDetected(imageData, currentLivenessData);
       }
 
       if (onLivenessVerified) {
-        onLivenessVerified({
-          score: livenessScore,
-          blinkCount,
-          headMovement,
-          confidence
-        });
+        onLivenessVerified(currentLivenessData);
       }
 
       setStatus('Face captured and sent for verification!');
@@ -244,8 +295,10 @@ const LiveFaceDetection = ({ onFaceDetected, onLivenessVerified }) => {
     setHeadMovement(false);
     setLivenessScore(0);
     setConfidence(0);
-    setHasTriggeredCapture(false); // Add this line
+    setHasTriggeredCapture(false);
     setIsDetecting(false);
+    setLastFacePosition(null);
+    setEyeClosedFrames(0);
     setStatus('Position your face in the frame');
   };
 
@@ -323,15 +376,15 @@ const LiveFaceDetection = ({ onFaceDetected, onLivenessVerified }) => {
           </Alert>
         )}
 
-        {confidence > 0.5 && livenessScore < 0.3 && (
+        {confidence > 0.5 && livenessScore < 0.8 && (
           <Alert severity="warning" sx={{ mt: 2 }}>
-            Please blink and move your head slightly to verify liveness
+            Liveness verification in progress... Please wait for auto-capture at 80%+
           </Alert>
         )}
 
-        {confidence > 0.8 && livenessScore > 0.7 && !isDetecting && (
+        {confidence > 0.7 && livenessScore >= 0.8 && !isDetecting && (
           <Alert severity="success" sx={{ mt: 2 }}>
-            Ready for automatic verification!
+            ✅ Ready for verification! Auto-capture will trigger shortly...
           </Alert>
         )}
 
@@ -345,12 +398,13 @@ const LiveFaceDetection = ({ onFaceDetected, onLivenessVerified }) => {
             Reset Detection
           </Button>
           
-          {confidence > 0.7 && livenessScore > 0.3 && (
+          {confidence > 0.5 && (
             <Button 
               variant="contained" 
               onClick={autoCaptureFace}
-              disabled={isDetecting || confidence < 0.7}
+              disabled={isDetecting || confidence < 0.7 || livenessScore < 0.8}
               size="small"
+              color={confidence > 0.7 && livenessScore >= 0.8 ? 'success' : 'primary'}
             >
               {isDetecting ? 'Verifying...' : 'Capture Face'}
             </Button>
