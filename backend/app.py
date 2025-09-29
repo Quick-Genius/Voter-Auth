@@ -249,11 +249,12 @@ def verify_voter_id():
 
 @app.route('/api/voter/verify-face', methods=['POST'])
 def verify_face():
-    """Step 2: Verify face using computer vision"""
+    """Step 2: Enhanced face verification with liveness detection"""
     try:
         data = request.get_json()
         voter_uuid = data.get('voter_uuid')
         face_image_data = data.get('face_image')  # Base64 encoded image
+        liveness_data = data.get('liveness_data', {})  # Liveness detection results
         
         if not voter_uuid or not face_image_data:
             return jsonify({'error': 'Voter UUID and face image are required'}), 400
@@ -271,30 +272,51 @@ def verify_face():
         if not vote_record or not vote_record.id_verified:
             return jsonify({'error': 'ID verification must be completed first'}), 400
         
-        print("👤 Processing face verification...")
+        print("👤 Processing enhanced face verification with liveness detection...")
+        print(f"📊 Liveness data received: {liveness_data}")
         
-        # Use actual face recognition system
-        if voter.face_encoding:
-            # Verify against stored face encoding
-            face_result = face_system.verify_face(voter.face_encoding, face_image_data)
+        # Save the captured face image for future reference
+        saved_path, save_error = face_system.save_face_image(
+            face_image_data, voter.voter_id, 'live_capture'
+        )
+        if save_error:
+            print(f"⚠️ Warning: Could not save face image: {save_error}")
         else:
-            # If no stored encoding, create one from the live image (for demo)
-            print("⚠️  No stored face encoding found, creating from live image for demo")
-            encoding, error = face_system.encode_face_for_storage(face_image_data)
-            if error:
-                return jsonify({'error': f'Face encoding failed: {error}'}), 400
+            print(f"💾 Face image saved: {saved_path}")
+        
+        # Use enhanced face recognition with liveness detection
+        if voter.face_encoding:
+            # Verify against stored face encoding with liveness
+            face_result = face_system.verify_face_with_liveness(
+                voter.face_encoding, face_image_data, liveness_data
+            )
+        else:
+            # Try to match against stored face images first
+            match_result = face_system.match_face_from_storage(face_image_data, voter.voter_id)
             
-            # Store the encoding for future use
-            voter.face_encoding = encoding
-            db.session.commit()
-            
-            # Use actual face recognition
-            face_result = face_system.verify_face_from_image(face_image_data)
-            if not face_result['success']:
-                return jsonify({
-                    'error': f'Face processing failed: {face_result.get("error")}',
-                    'details': face_result
-                }), 400
+            if match_result['success'] and match_result['verified']:
+                # Found a match in stored images
+                face_result = face_system.verify_face_with_liveness(
+                    None, face_image_data, liveness_data
+                )
+                # Override with match confidence
+                face_result['face_confidence'] = match_result['confidence']
+                face_result['confidence'] = match_result['confidence']
+            else:
+                # Create new encoding from live image
+                print("⚠️ No stored face data found, creating from live image")
+                encoding, error = face_system.encode_face_for_storage(face_image_data)
+                if error:
+                    return jsonify({'error': f'Face encoding failed: {error}'}), 400
+                
+                # Store the encoding for future use
+                voter.face_encoding = encoding
+                db.session.commit()
+                
+                # Use enhanced verification with liveness
+                face_result = face_system.verify_face_with_liveness(
+                    encoding, face_image_data, liveness_data
+                )
         
         if not face_result['success']:
             return jsonify({
@@ -302,17 +324,18 @@ def verify_face():
                 'details': face_result
             }), 400
         
-        # Strict confidence thresholds for security
-        min_confidence = 0.85
-        min_similarity = 0.80
-        min_quality = 0.70
+        # Extract verification results
+        face_confidence = face_result.get('face_confidence', 0)
+        liveness_score = face_result.get('liveness_score', 0)
+        final_verified = face_result.get('verified', False)
         
-        print(f"🔍 Face verification results: Confidence={face_result['confidence']:.3f}, Similarity={face_result.get('similarity', 0):.3f}")
+        print(f"🔍 Enhanced verification results:")
+        print(f"   Face confidence: {face_confidence:.3f}")
+        print(f"   Liveness score: {liveness_score:.3f}")
+        print(f"   Final verified: {final_verified}")
+        print(f"   Liveness details: {face_result.get('liveness_details', {})}")
         
-        if (face_result['verified'] and 
-            face_result['confidence'] >= min_confidence and 
-            face_result.get('similarity', 0) >= min_similarity and
-            face_result.get('quality_score', 0) >= min_quality):
+        if final_verified:
             vote_record.face_verified = True
             db.session.commit()
             
@@ -321,38 +344,58 @@ def verify_face():
                 voter.uuid, voter.voter_id, vote_record.polling_booth_id, 'face_verification'
             )
             
-            print(f"✅ Face verification successful. Confidence: {face_result['confidence']:.2f}")
+            print(f"✅ Enhanced face verification successful!")
             
             return jsonify({
                 'success': True,
-                'confidence': face_result['confidence'],
-                'similarity': face_result['similarity'],
-                'quality_score': face_result.get('quality_score', 0.8),
+                'verified': True,
+                'face_confidence': face_confidence,
+                'liveness_score': liveness_score,
+                'confidence': face_result.get('confidence', 0),
+                'similarity': face_result.get('similarity', 0),
+                'quality_score': face_result.get('quality_score', 0),
+                'liveness_details': face_result.get('liveness_details', {}),
+                'verification_details': face_result.get('verification_details', {}),
                 'blockchain_hash': blockchain_result.get('blockchain_hash'),
                 'next_step': 'iris_verification'
             })
         else:
+            # Log fraud attempt with detailed information
+            verification_details = face_result.get('verification_details', {})
+            fraud_details = (
+                f'Enhanced face verification failed for voter {voter.voter_id}. '
+                f'Face confidence: {face_confidence:.2f} (required: 0.94), '
+                f'Liveness score: {liveness_score:.2f} (required: 0.30). '
+                f'Face threshold met: {verification_details.get("face_threshold_met", False)}, '
+                f'Liveness threshold met: {verification_details.get("liveness_threshold_met", False)}'
+            )
+            
             fraud = FraudAttempt(
                 voter_id=voter.voter_id,
                 attempted_booth_id=vote_record.polling_booth_id,
                 fraud_type='identity_mismatch',
-                details=f'Face verification failed. Confidence: {face_result["confidence"]:.2f}, Required: {min_confidence}'
+                details=fraud_details
             )
             db.session.add(fraud)
             db.session.commit()
             
-            print(f"❌ Face verification failed. Confidence: {face_result['confidence']:.2f} < {min_confidence}")
+            print(f"❌ Enhanced face verification failed: {fraud_details}")
             
             return jsonify({
                 'success': False,
-                'error': f'Face verification failed. Confidence too low: {face_result["confidence"]:.2f}',
-                'confidence': face_result['confidence'],
-                'required_confidence': min_confidence,
-                'details': 'Please ensure good lighting and face the camera directly'
+                'verified': False,
+                'error': 'Face verification failed - insufficient confidence or liveness',
+                'face_confidence': face_confidence,
+                'liveness_score': liveness_score,
+                'required_face_confidence': 0.94,
+                'required_liveness_score': 0.30,
+                'liveness_details': face_result.get('liveness_details', {}),
+                'verification_details': verification_details,
+                'details': 'Please ensure good lighting, face the camera directly, blink naturally, and move your head slightly'
             }), 403
             
     except Exception as e:
-        print(f"❌ Face verification error: {str(e)}")
+        print(f"❌ Enhanced face verification error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/voter/verify-iris', methods=['POST'])
